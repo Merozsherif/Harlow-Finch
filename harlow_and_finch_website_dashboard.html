@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Harlow & Finch — Real Estate Ecosystem Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #0d1527;
+    color: #e2e8f0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #0f172a; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #475569; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ------------------------------ ICON SYSTEM ------------------------------ */
+const ICONS = {
+  search: [{ t: "circle", cx: 11, cy: 11, r: 7 }, { t: "line", x1: 21, y1: 21, x2: 16.2, y2: 16.2 }],
+  heart: [{ t: "path", d: "M12 21c-.3 0-.6-.1-.8-.3C7.4 17.9 3 14.2 3 9.9 3 7.2 5.2 5 7.9 5c1.6 0 3 .8 3.9 2 .9-1.2 2.3-2 3.9-2C18.4 5 20.6 7.2 20.6 9.9c0 4.3-4.4 8-8.2 10.8-.2.2-.5.3-.8.3z" }],
+  "message-circle": [{ t: "path", d: "M4 4h16v12H9l-5 4V4z" }],
+  user: [{ t: "circle", cx: 12, cy: 8, r: 3.2 }, { t: "path", d: "M5 21c0-3.5 3-6 7-6s7 2.5 7 6" }],
+  bell: [{ t: "path", d: "M12 3c-3 0-5 2.3-5 5.5 0 5-2 6.5-2 6.5h14s-2-1.5-2-6.5C17 5.3 15 3 12 3z" }, { t: "path", d: "M10 18a2 2 0 0 0 4 0" }],
+  "map-pin": [{ t: "path", d: "M12 21s7-6.5 7-11.5C19 5.4 15.9 3 12 3S5 5.4 5 9.5C5 14.5 12 21 12 21z" }, { t: "circle", cx: 12, cy: 10, r: 2.4 }],
+  bed: [{ t: "line", x1: 2, y1: 17, x2: 22, y2: 17 }, { t: "path", d: "M4 17V9.5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2V12" }, { t: "path", d: "M12 12h6a2 2 0 0 1 2 2v3" }, { t: "line", x1: 2, y1: 17, x2: 2, y2: 20 }, { t: "line", x1: 22, y1: 17, x2: 22, y2: 20 }],
+  bath: [{ t: "path", d: "M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-3z" }, { t: "path", d: "M7 12V6.5A2.5 2.5 0 0 1 11 4.6" }, { t: "line", x1: 4, y1: 20, x2: 4, y2: 21.5 }, { t: "line", x1: 20, y1: 20, x2: 20, y2: 21.5 }],
+  maximize: [{ t: "path", d: "M15 3h6v6" }, { t: "path", d: "M9 21H3v-6" }, { t: "line", x1: 21, y1: 3, x2: 14, y2: 10 }, { t: "line", x1: 3, y1: 21, x2: 10, y2: 14 }],
+  "chevron-left": [{ t: "path", d: "M15 18l-6-6 6-6" }],
+  x: [{ t: "line", x1: 6, y1: 6, x2: 18, y2: 18 }, { t: "line", x1: 6, y1: 18, x2: 18, y2: 6 }],
+  check: [{ t: "path", d: "M4 12l5 5L20 6" }],
+  calendar: [{ t: "rect", x: 3, y: 4, w: 18, h: 17, rx: 2 }, { t: "line", x1: 16, y1: 2, x2: 16, y2: 6 }, { t: "line", x1: 8, y1: 2, x2: 8, y2: 6 }, { t: "line", x1: 3, y1: 10, x2: 21, y2: 10 }],
+  "trending-up": [{ t: "path", d: "M3 17l6-6 4 4 8-8" }, { t: "path", d: "M15 7h6v6" }],
+  users: [{ t: "circle", cx: 9, cy: 8, r: 3 }, { t: "path", d: "M2 20c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5" }, { t: "circle", cx: 17.5, cy: 8.5, r: 2.2 }, { t: "path", d: "M16.5 14.6c2.6.5 4.5 2.4 4.5 5.4" }],
+  clock: [{ t: "circle", cx: 12, cy: 12, r: 9 }, { t: "line", x1: 12, y1: 7, x2: 12, y2: 12 }, { t: "line", x1: 12, y1: 12, x2: 15.5, y2: 14 }],
+  send: [{ t: "path", d: "M22 2 11 13" }, { t: "path", d: "M22 2 15 22l-4-9-9-4 20-7z" }],
+  wifi: [{ t: "path", d: "M2 8.5a16 16 0 0 1 20 0" }, { t: "path", d: "M5 12a11 11 0 0 1 14 0" }, { t: "path", d: "M8.5 15.5a6 6 0 0 1 7 0" }, { t: "circle", cx: 12, cy: 19, r: 1 }],
+  battery: [{ t: "rect", x: 2, y: 7, w: 18, h: 10, rx: 2 }, { t: "line", x1: 22, y1: 10, x2: 22, y2: 14 }, { t: "rect", x: 4, y: 9, w: 12, h: 6, rx: 1, fillOnly: true }],
+  home: [{ t: "path", d: "M3 11l9-7 9 7" }, { t: "path", d: "M5 10v10h14V10" }],
+  grid: [{ t: "rect", x: 3, y: 3, w: 7, h: 7, rx: 1.5 }, { t: "rect", x: 14, y: 3, w: 7, h: 7, rx: 1.5 }, { t: "rect", x: 14, y: 14, w: 7, h: 7, rx: 1.5 }, { t: "rect", x: 3, y: 14, w: 7, h: 7, rx: 1.5 }],
+  "phone-call": [{ t: "path", d: "M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 2 .7 2.9a2 2 0 0 1-.4 2.1L8 10a16 16 0 0 0 6 6l1.3-1.4a2 2 0 0 1 2.1-.4c.9.4 1.9.6 2.9.7a2 2 0 0 1 1.7 2.1z" }],
+  smartphone: [{ t: "rect", x: 7, y: 2, w: 10, h: 20, rx: 2.2 }, { t: "line", x1: 10.5, y1: 18.4, x2: 13.5, y2: 18.4 }],
+  monitor: [{ t: "rect", x: 3, y: 4, w: 18, h: 12.5, rx: 1.6 }, { t: "line", x1: 8, y1: 20, x2: 16, y2: 20 }, { t: "line", x1: 12, y1: 16.5, x2: 12, y2: 20 }],
+  globe: [{ t: "circle", cx: 12, cy: 12, r: 9 }, { t: "line", x1: 3, y1: 12, x2: 21, y2: 12 }, { t: "path", d: "M12 3c3 3 3 15 0 18" }, { t: "path", d: "M12 3c-3 3-3 15 0 18" }],
+  plus: [{ t: "line", x1: 12, y1: 5, x2: 12, y2: 19 }, { t: "line", x1: 5, y1: 12, x2: 19, y2: 12 }],
+  filter: [{ t: "polygon", points: "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" }],
+  arrowRight: [{ t: "line", x1: 5, y1: 12, x2: 19, y2: 12 }, { t: "polyline", points: "12 5 19 12 12 19" }]
+};
+
+function Icon({ name, size = 16, color = "currentColor", strokeWidth = 2, fill = "none", style }) {
+  const shapes = ICONS[name] || [];
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth}
+      strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, ...style }}>
+      {shapes.map((s, i) => {
+        if (s.t === "path") return <path key={i} d={s.d} fill={s.fillOnly ? color : (name === "heart" ? fill : "none")} />;
+        if (s.t === "circle") return <circle key={i} cx={s.cx} cy={s.cy} r={s.r} fill={s.fillOnly ? color : "none"} />;
+        if (s.t === "line") return <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} />;
+        if (s.t === "rect") return <rect key={i} x={s.x} y={s.y} width={s.w} height={s.h} rx={s.rx || 0} fill={s.fillOnly ? color : "none"} stroke={s.fillOnly ? "none" : color} />;
+        if (s.t === "polyline") return <polyline key={i} points={s.points} />;
+        if (s.t === "polygon") return <polygon key={i} points={s.points} />;
+        return null;
+      })}
+    </svg>
+  );
+}
+
+/* ---------------------------------- DATA ---------------------------------- */
+
+const INITIAL_LISTINGS = [
+  { id: 1, title: "Redbrick Semi-D, Marlborough Road", price: 695000, type: "House", beds: 4, baths: 2, area: "142 m²", location: "Donnybrook, Dublin 4", status: "Active", views: 214,
+    image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=900&q=80",
+    description: "A handsome red-brick semi on one of Donnybrook's quietest roads. South-facing garden, original cornicing, and a kitchen extension finished in 2022. Walk to the DART in under ten minutes." },
+  { id: 2, title: "Canal-side Two-Bed", price: 385000, type: "Apartment", beds: 2, baths: 1, area: "78 m²", location: "Ranelagh, Dublin 6", status: "Active", views: 176,
+    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=900&q=80",
+    description: "Top-floor apartment overlooking the Grand Canal. Bright open-plan living, private balcony, and secure underground parking. Ranelagh village is a five-minute stroll." },
+  { id: 3, title: "Georgian Duplex Conversion", price: 475000, type: "Duplex", beds: 3, baths: 2, area: "110 m²", location: "Portobello, Dublin 8", status: "Under offer", views: 143,
+    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=900&q=80",
+    description: "Upper duplex in a converted Georgian house, keeping the high ceilings and tall sash windows while adding a mezzanine study. Full sound insulation between floors." },
+  { id: 4, title: "Bright Two-Bed Above the Village", price: 340000, type: "Apartment", beds: 2, baths: 1, area: "70 m²", location: "Rathmines, Dublin 6", status: "Active", views: 98,
+    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=900&q=80",
+    description: "A well-kept two-bed with dual-aspect light and a recently fitted kitchen. Rathmines pool, restaurants and the 15/83 bus routes are all on the doorstep." },
+  { id: 5, title: "Coastal House on Strand Road", price: 850000, type: "House", beds: 4, baths: 3, area: "165 m²", location: "Sandymount, Dublin 4", status: "Active", views: 261,
+    image: "https://images.unsplash.com/photo-1449844908441-8829872d2607?w=900&q=80",
+    description: "Two minutes from Sandymount Strand, with sea glimpses from the top floor. Fully renovated in 2023 including underfloor heating and a slate-tiled kitchen extension." },
+  { id: 6, title: "Restored Artisan Cottage", price: 425000, type: "House", beds: 2, baths: 1, area: "64 m²", location: "Stoneybatter, Dublin 7", status: "Active", views: 87,
+    image: "https://images.unsplash.com/photo-1516156008625-3a9d6067fab5?w=900&q=80",
+    description: "A single-storey artisan cottage stripped back and rebuilt with a vaulted living space. Steps from Manor Street's cafés and a ten-minute walk to Smithfield Luas." },
+];
+
+const AGENT = { name: "Sarah Byrne", role: "Senior Negotiator", initials: "SB" };
+const DEMO_USER = "Marwan Sherif";
+const DEMO_INITIALS = DEMO_USER.split(" ").map((w) => w[0]).join("");
+const EUR = (n) => "€" + Number(n).toLocaleString("en-IE");
+
+const DATE_CHIPS = ["Today", "Tomorrow", "Sat 16", "Sun 17"];
+const TIME_CHIPS = ["10:00", "12:30", "15:00", "17:30"];
+
+const WEEK_VIEWS = [
+  { day: "Mon", views: 41 }, { day: "Tue", views: 58 }, { day: "Wed", views: 49 },
+  { day: "Thu", views: 67 }, { day: "Fri", views: 72 }, { day: "Sat", views: 88 }, { day: "Sun", views: 63 },
+];
+
+const VIEW_TABS = [
+  { key: "website", label: "Public Website (Full Width)", icon: "globe" },
+  { key: "dashboard", label: "Agent Dashboard (Wide)", icon: "monitor" },
+  { key: "mobile", label: "Mobile App Preview", icon: "smartphone" },
+];
+
+function timeNow() {
+  return new Date().toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" });
+}
+
+/* ------------------------------ MINI COMPONENTS ------------------------------ */
+
+function MiniBarChart({ data }) {
+  const max = Math.max(...data.map(d => d.views));
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', height: 140, gap: 12, paddingTop: 20, paddingBottom: 10 }}>
+      {data.map((d, i) => (
+        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }}>
+          <div style={{ fontSize: 11, color: '#d4af37', marginBottom: 4, fontWeight: 600 }}>{d.views}</div>
+          <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'flex-end', background: 'rgba(255,255,255,0.03)', borderRadius: 4 }}>
+            <div style={{
+              width: '100%',
+              height: `${(d.views / max) * 100}%`,
+              background: 'linear-gradient(180deg, #d4af37 0%, #a9803f 100%)',
+              borderRadius: 4,
+              transition: 'height 0.3s'
+            }} />
+          </div>
+          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>{d.day}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function KpiCard({ label, value, iconName, accent, mono }) {
+  return (
+    <div style={{
+      background: accent ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(169, 128, 63, 0.05) 100%)' : '#1e293b',
+      border: accent ? '1px solid rgba(212, 175, 55, 0.4)' : '1px solid #334155',
+      borderRadius: 12,
+      padding: '20px 24px',
+      flex: 1,
+      minWidth: 180,
+      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 500 }}>{label}</span>
+        <div style={{
+          width: 34, height: 34, borderRadius: 8,
+          background: accent ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <Icon name={iconName} size={18} color={accent ? '#d4af37' : '#cbd5e1'} />
+        </div>
+      </div>
+      <div style={{
+        fontSize: 28, fontWeight: 700, color: accent ? '#fef08a' : '#f8fafc',
+        fontFamily: mono ? 'monospace' : 'inherit'
+      }}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------ MAIN APPLICATION ------------------------------ */
+
+function RealEstateAppDemo() {
+  const [view, setView] = useState("website");
+  const [listings, setListings] = useState(INITIAL_LISTINGS);
+  const [phoneTab, setPhoneTab] = useState("home");
+  const [selectedId, setSelectedId] = useState(null);
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [showAddListing, setShowAddListing] = useState(false);
+  const [savedIds, setSavedIds] = useState([2, 5]);
+  const [filter, setFilter] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [notifOn, setNotifOn] = useState(true);
+  const [banner, setBanner] = useState(null);
+  const [confirmDate, setConfirmDate] = useState(DATE_CHIPS[0]);
+  const [confirmTime, setConfirmTime] = useState(TIME_CHIPS[0]);
+  const [toastPhone, setToastPhone] = useState(null);
+  const [webToast, setWebToast] = useState(null);
+  
+  // New Listing Form State
+  const [newTitle, setNewTitle] = useState("");
+  const [newPrice, setNewPrice] = useState("");
+  const [newType, setNewType] = useState("House");
+  const [newLocation, setNewLocation] = useState("");
+  const [newBeds, setNewBeds] = useState(3);
+  const [newBaths, setNewBaths] = useState(2);
+  const [newArea, setNewArea] = useState("100 m²");
+  const [newDesc, setNewDesc] = useState("");
+
+  const [messages, setMessages] = useState([
+    { from: "agent", text: "Hi Marwan! Thanks for your interest in Harlow & Finch listings.", t: "09:14" },
+    { from: "agent", text: "Let me know if you'd like to arrange a viewing for any of them.", t: "09:14" },
+  ]);
+  const [draft, setDraft] = useState("");
+
+  const [dashTab, setDashTab] = useState("overview");
+  const [leads, setLeads] = useState([
+    { id: 101, name: "Conor Maguire", listing: "Coastal House on Strand Road", when: "Fri, 14:00", source: "Website", status: "Confirmed" },
+    { id: 102, name: "Niamh O'Riordan", listing: "Canal-side Two-Bed", when: "Sat, 11:30", source: "Website", status: "Pending" },
+  ]);
+  const [activity, setActivity] = useState([
+    { id: "a1", text: "Niamh O'Riordan requested a viewing — Canal-side Two-Bed", time: "yesterday" },
+  ]);
+  const [unreadLeads, setUnreadLeads] = useState(0);
+  const [dashToast, setDashToast] = useState(null);
+
+  const selectedListing = listings.find((l) => l.id === selectedId);
+
+  const filteredListings = listings.filter((l) => {
+    const matchType = filter === "All" || l.type === filter;
+    const matchSearch = searchQuery === "" || 
+      l.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      l.location.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchType && matchSearch;
+  });
+
+  function logActivity(text) {
+    setActivity((a) => [{ id: Date.now(), text, time: "just now" }, ...a].slice(0, 8));
+  }
+
+  function openListing(id) {
+    setSelectedId(id);
+    const l = listings.find((x) => x.id === id);
+    if (l) {
+      logActivity(`${DEMO_USER} viewed "${l.title}"`);
+    }
+  }
+
+  function toggleSave(id) {
+    setSavedIds((prev) => {
+      const has = prev.includes(id);
+      const l = listings.find((x) => x.id === id);
+      if (l) {
+        logActivity(`${DEMO_USER} ${has ? "unsaved" : "saved"} "${l.title}"`);
+      }
+      return has ? prev.filter((x) => x !== id) : [...prev, id];
+    });
+  }
+
+  function confirmSchedule() {
+    if (!selectedListing) return;
+    const newLead = {
+      id: Date.now(),
+      name: DEMO_USER,
+      listing: selectedListing.title,
+      when: `${confirmDate}, ${confirmTime}`,
+      source: view === "mobile" ? "Mobile App" : "Website",
+      status: "Pending",
+    };
+    setLeads((prev) => [newLead, ...prev]);
+    setUnreadLeads((n) => n + 1);
+    setShowSchedule(false);
+    
+    const msg = `Viewing requested for "${selectedListing.title}" — Sarah will confirm shortly`;
+    setToastPhone(msg);
+    setWebToast(msg);
+    
+    logActivity(`${DEMO_USER} requested a viewing — "${selectedListing.title}"`);
+    setTimeout(() => { setToastPhone(null); setWebToast(null); }, 3500);
+    setDashToast(`New lead from ${newLead.source}: ${DEMO_USER}`);
+    setTimeout(() => setDashToast(null), 3500);
+  }
+
+  function handleCreateListing(e) {
+    e.preventDefault();
+    if (!newTitle || !newPrice) return;
+    const created = {
+      id: Date.now(),
+      title: newTitle,
+      price: Number(newPrice),
+      type: newType,
+      beds: Number(newBeds),
+      baths: Number(newBaths),
+      area: newArea,
+      location: newLocation || "Dublin, Ireland",
+      status: "Active",
+      views: 1,
+      image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=80",
+      description: newDesc || "Newly added luxury property listing."
+    };
+    setListings([created, ...listings]);
+    setShowAddListing(false);
+    setNewTitle(""); setNewPrice(""); setNewLocation(""); setNewDesc("");
+    setDashToast(`Property "${created.title}" successfully added!`);
+    logActivity(`Agent ${AGENT.name} created new listing "${created.title}"`);
+    setTimeout(() => setDashToast(null), 3500);
+  }
+
+  function fireNotification() {
+    if (!notifOn) return;
+    setBanner(listings[3] || listings[0]);
+    setTimeout(() => setBanner(null), 4500);
+  }
+
+  function sendMessage() {
+    if (!draft.trim()) return;
+    setMessages((m) => [...m, { from: "me", text: draft, t: timeNow() }]);
+    logActivity(`${DEMO_USER} sent a message to Sarah`);
+    setDraft("");
+    setTimeout(() => {
+      setMessages((m) => [...m, { from: "agent", text: "Thanks Marwan! I've received your inquiry and will update you shortly.", t: timeNow() }]);
+    }, 1200);
+  }
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      
+      {/* GLOBAL TOP HEADER */}
+      <header style={{
+        background: '#0b1120',
+        borderBottom: '1px solid #1e293b',
+        padding: '20px 40px',
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 20
+      }}>
+        <div>
+          <div style={{ fontSize: 11, tracking: 2, textTransform: 'uppercase', color: '#d4af37', fontWeight: 700, letterSpacing: '1.5px' }}>UI/UX Live Interactive Prototype</div>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 700, color: '#f8fafc', margin: '4px 0 2px 0' }}>Harlow &amp; Finch Real Estate</h1>
+          <p style={{ fontSize: 13, color: '#94a3b8' }}>All views are live, fully functional and synchronized in real time.</p>
+        </div>
+
+        {/* VIEW SELECTOR SWITCH */}
+        <div style={{
+          background: '#1e293b',
+          padding: 6,
+          borderRadius: 12,
+          display: 'flex',
+          gap: 6,
+          border: '1px solid #334155'
+        }}>
+          {VIEW_TABS.map((t) => {
+            const active = view === t.key;
+            return (
+              <button
+                key={t.key}
+                onClick={() => setView(t.key)}
+                style={{
+                  background: active ? 'linear-gradient(135deg, #d4af37 0%, #a9803f 100%)' : 'transparent',
+                  color: active ? '#0f172a' : '#cbd5e1',
+                  border: 'none',
+                  padding: '10px 18px',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: active ? 700 : 500,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <Icon name={t.icon} size={15} color={active ? '#0f172a' : '#cbd5e1'} strokeWidth={active ? 2.5 : 2} />
+                <span>{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </header>
+
+      {/* NOTIFICATION BANNER / TOAST */}
+      {webToast && (
+        <div style={{
+          position: 'fixed', top: 20, right: 20, zIndex: 9999,
+          background: '#d4af37', color: '#0f172a', padding: '14px 24px',
+          borderRadius: 8, fontWeight: 700, boxShadow: '0 10px 25px rgba(0,0,0,0.4)',
+          display: 'flex', alignItems: 'center', gap: 10
+        }}>
+          <Icon name="check" size={18} color="#0f172a" />
+          <span>{webToast}</span>
+        </div>
+      )}
+
+      {/* MAIN VIEW AREA */}
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+
+        {/* ------------------------------------------------------------------ */}
+        {/* VIEW 1: PUBLIC WEBSITE (SPACIOUS / FULL WIDTH)                      */}
+        {/* ------------------------------------------------------------------ */}
+        {view === "website" && (
+          <div style={{ flex: 1, background: '#0d1527', display: 'flex', flexDirection: 'column' }}>
+            
+            {/* Website Navbar */}
+            <nav style={{
+              background: '#0f172a',
+              borderBottom: '1px solid #1e293b',
+              padding: '18px 5%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              position: 'sticky', top: 0, zIndex: 100
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 40 }}>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: '#fef08a', letterSpacing: '0.5px', cursor: 'pointer' }} onClick={() => setSelectedId(null)}>
+                  HARLOW &amp; FINCH
+                </div>
+                <div style={{ display: 'flex', gap: 24, fontSize: 14, fontWeight: 500 }}>
+                  <span style={{ color: '#d4af37', cursor: 'pointer' }} onClick={() => setSelectedId(null)}>Properties</span>
+                  <span style={{ color: '#94a3b8', cursor: 'pointer' }} onClick={() => { setSelectedId(null); setFilter('House'); }}>Houses</span>
+                  <span style={{ color: '#94a3b8', cursor: 'pointer' }} onClick={() => { setSelectedId(null); setFilter('Apartment'); }}>Apartments</span>
+                  <span style={{ color: '#94a3b8', cursor: 'pointer' }} onClick={() => { setView('dashboard'); }}>Agent Portal</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <span style={{ fontSize: 13, color: '#94a3b8' }}>Saved ({savedIds.length})</span>
+                <button 
+                  onClick={() => setView("mobile")}
+                  style={{
+                    background: 'transparent', border: '1px solid #d4af37', color: '#d4af37',
+                    padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer'
+                  }}
+                >
+                  Open Mobile App View
+                </button>
+              </div>
+            </nav>
+
+            {!selectedListing ? (
+              <div>
+                {/* Hero Banner */}
+                <div style={{
+                  background: 'linear-gradient(rgba(13, 21, 39, 0.75), rgba(13, 21, 39, 0.95)), url("https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600&q=80")',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  padding: '80px 5% 100px 5%',
+                  textAlign: 'center'
+                }}>
+                  <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 44, fontWeight: 700, color: '#ffffff', marginBottom: 16 }}>
+                    Find Your Dream Home in Dublin
+                  </h2>
+                  <p style={{ fontSize: 16, color: '#cbd5e1', maxWidth: 600, margin: '0 auto 36px auto' }}>
+                    Explore handpicked premium properties, schedule private viewings, and connect directly with Dublin's top estate agents.
+                  </p>
+
+                  {/* Wide Search Bar */}
+                  <div style={{
+                    maxWidth: 800, margin: '0 auto', background: '#0f172a', padding: 12, borderRadius: 12,
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.5)', border: '1px solid #334155',
+                    display: 'flex', gap: 12, flexWrap: 'wrap'
+                  }}>
+                    <div style={{ flex: 2, display: 'flex', alignItems: 'center', background: '#1e293b', borderRadius: 8, padding: '0 16px', minWidth: 200 }}>
+                      <Icon name="search" size={18} color="#94a3b8" />
+                      <input 
+                        type="text" 
+                        placeholder="Search location or title (e.g. Ranelagh, Donnybrook)..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        style={{ background: 'transparent', border: 'none', color: '#fff', padding: '14px', width: '100%', outline: 'none', fontSize: 14 }}
+                      />
+                    </div>
+                    <select 
+                      value={filter}
+                      onChange={(e) => setFilter(e.target.value)}
+                      style={{ flex: 1, background: '#1e293b', border: 'none', color: '#fff', padding: '0 16px', borderRadius: 8, fontSize: 14, outline: 'none', cursor: 'pointer', minWidth: 140 }}
+                    >
+                      <option value="All">All Types</option>
+                      <option value="House">House</option>
+                      <option value="Apartment">Apartment</option>
+                      <option value="Duplex">Duplex</option>
+                    </select>
+                    <button style={{
+                      background: 'linear-gradient(135deg, #d4af37 0%, #a9803f 100%)', color: '#0f172a',
+                      border: 'none', padding: '0 28px', borderRadius: 8, fontWeight: 700, fontSize: 15, cursor: 'pointer', minHeight: 48
+                    }}>
+                      Search
+                    </button>
+                  </div>
+                </div>
+
+                {/* Listing Grid */}
+                <div style={{ padding: '60px 5%', maxWidth: 1400, margin: '0 auto', width: '100%' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
+                    <div>
+                      <h3 style={{ fontSize: 24, fontWeight: 700, color: '#f8fafc' }}>Featured Properties</h3>
+                      <p style={{ fontSize: 14, color: '#94a3b8' }}>Showing {filteredListings.length} properties available</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      {["All", "House", "Apartment", "Duplex"].map((f) => (
+                        <button key={f} onClick={() => setFilter(f)} style={{
+                          background: filter === f ? '#d4af37' : '#1e293b',
+                          color: filter === f ? '#0f172a' : '#cbd5e1',
+                          border: filter === f ? 'none' : '1px solid #334155',
+                          padding: '8px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer'
+                        }}>
+                          {f}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 28 }}>
+                    {filteredListings.map((l) => (
+                      <div 
+                        key={l.id} 
+                        onClick={() => openListing(l.id)}
+                        style={{
+                          background: '#0f172a', borderRadius: 16, overflow: 'hidden', border: '1px solid #1e293b',
+                          cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = '#d4af37'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = '#1e293b'; }}
+                      >
+                        <div style={{ position: 'relative', height: 220 }}>
+                          <img src={l.image} alt={l.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); toggleSave(l.id); }}
+                            style={{
+                              position: 'absolute', top: 12, right: 12, background: 'rgba(15, 23, 42, 0.75)',
+                              border: 'none', borderRadius: '50%', width: 36, height: 36,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+                            }}
+                          >
+                            <Icon name="heart" size={16} fill={savedIds.includes(l.id) ? "#d4af37" : "none"} color={savedIds.includes(l.id) ? "#d4af37" : "#fff"} strokeWidth={2} />
+                          </button>
+                          <span style={{
+                            position: 'absolute', bottom: 12, left: 12, background: 'rgba(15, 23, 42, 0.85)',
+                            color: '#e2e8f0', padding: '4px 10px', borderRadius: 4, fontSize: 12, fontWeight: 600
+                          }}>
+                            {l.type}
+                          </span>
+                        </div>
+                        <div style={{ padding: 20 }}>
+                          <div style={{ fontSize: 22, fontWeight: 800, color: '#fef08a', marginBottom: 6 }}>{EUR(l.price)}</div>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: '#f8fafc', marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.title}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#94a3b8', marginBottom: 16 }}>
+                            <Icon name="map-pin" size={14} color="#d4af37" /> <span>{l.location}</span>
+                          </div>
+                          <div style={{
+                            display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #1e293b', paddingTop: 14,
+                            fontSize: 13, color: '#cbd5e1'
+                          }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="bed" size={14} /> {l.beds} Beds</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="bath" size={14} /> {l.baths} Baths</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="maximize" size={14} /> {l.area}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Website Property Detail View */
+              <div style={{ padding: '40px 5%', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
+                <button 
+                  onClick={() => setSelectedId(null)}
+                  style={{
+                    background: '#1e293b', border: '1px solid #334155', color: '#cbd5e1',
+                    padding: '8px 16px', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24
+                  }}
+                >
+                  <Icon name="chevron-left" size={16} /> Back to Listings
+                </button>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 32 }}>
+                  <div>
+                    <div style={{ borderRadius: 16, overflow: 'hidden', height: 420, marginBottom: 24 }}>
+                      <img src={selectedListing.image} alt={selectedListing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                      <div>
+                        <h2 style={{ fontSize: 28, fontWeight: 700, color: '#f8fafc', marginBottom: 6 }}>{selectedListing.title}</h2>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#94a3b8', fontSize: 15 }}>
+                          <Icon name="map-pin" size={16} color="#d4af37" /> <span>{selectedListing.location}</span>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 32, fontWeight: 800, color: '#fef08a' }}>{EUR(selectedListing.price)}</div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 24, background: '#0f172a', padding: 20, borderRadius: 12, border: '1px solid #1e293b', marginBottom: 24 }}>
+                      <div><span style={{ color: '#94a3b8', fontSize: 12, display: 'block' }}>BEDROOMS</span><strong style={{ fontSize: 18, color: '#fff' }}>{selectedListing.beds}</strong></div>
+                      <div><span style={{ color: '#94a3b8', fontSize: 12, display: 'block' }}>BATHROOMS</span><strong style={{ fontSize: 18, color: '#fff' }}>{selectedListing.baths}</strong></div>
+                      <div><span style={{ color: '#94a3b8', fontSize: 12, display: 'block' }}>PROPERTY SIZE</span><strong style={{ fontSize: 18, color: '#fff' }}>{selectedListing.area}</strong></div>
+                      <div><span style={{ color: '#94a3b8', fontSize: 12, display: 'block' }}>PROPERTY TYPE</span><strong style={{ fontSize: 18, color: '#fff' }}>{selectedListing.type}</strong></div>
+                    </div>
+
+                    <h4 style={{ fontSize: 18, color: '#f8fafc', marginBottom: 12 }}>Description</h4>
+                    <p style={{ color: '#cbd5e1', lineHeight: 1.7, fontSize: 15, marginBottom: 24 }}>{selectedListing.description}</p>
+                  </div>
+
+                  {/* Sidebar Booking Card */}
+                  <div>
+                    <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 16, padding: 24, position: 'sticky', top: 100 }}>
+                      <h3 style={{ fontSize: 18, color: '#f8fafc', marginBottom: 16 }}>Interested in this property?</h3>
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 16, borderBottom: '1px solid #1e293b', marginBottom: 20 }}>
+                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#d4af37', color: '#0f172a', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {AGENT.initials}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: '#f8fafc' }}>{AGENT.name}</div>
+                          <div style={{ fontSize: 12, color: '#94a3b8' }}>{AGENT.role}</div>
+                        </div>
+                      </div>
+
+                      <button 
+                        onClick={() => setShowSchedule(true)}
+                        style={{
+                          width: '100%', background: 'linear-gradient(135deg, #d4af37 0%, #a9803f 100%)',
+                          color: '#0f172a', border: 'none', padding: '14px', borderRadius: 8, fontWeight: 700,
+                          fontSize: 15, cursor: 'pointer', marginBottom: 12
+                        }}
+                      >
+                        Schedule Private Viewing
+                      </button>
+
+                      <button 
+                        onClick={() => toggleSave(selectedListing.id)}
+                        style={{
+                          width: '100%', background: 'transparent', border: '1px solid #334155',
+                          color: '#cbd5e1', padding: '12px', borderRadius: 8, fontWeight: 600,
+                          fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+                        }}
+                      >
+                        <Icon name="heart" size={16} fill={savedIds.includes(selectedListing.id) ? "#d4af37" : "none"} color={savedIds.includes(selectedListing.id) ? "#d4af37" : "#cbd5e1"} />
+                        {savedIds.includes(selectedListing.id) ? "Saved to Favorites" : "Save Property"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------------ */}
+        {/* VIEW 2: AGENT DASHBOARD (WIDE & EXPANDED CONTAINER)                */}
+        {/* ------------------------------------------------------------------ */}
+        {view === "dashboard" && (
+          <div style={{ flex: 1, background: '#0b1120', display: 'flex', minHeight: '80vh' }}>
+            
+            {/* Dashboard Sidebar */}
+            <div style={{ width: 260, background: '#0f172a', borderRight: '1px solid #1e293b', padding: '30px 20px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: '#d4af37', marginBottom: 30, paddingLeft: 8 }}>
+                Agent Portal
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+                {[
+                  { key: "overview", label: "Overview", icon: "grid" },
+                  { key: "listings", label: "Listings Management", icon: "home" },
+                  { key: "leads", label: "Leads & Requests", icon: "users", badge: unreadLeads },
+                  { key: "calendar", label: "Viewing Calendar", icon: "calendar" },
+                ].map((t) => {
+                  const active = dashTab === t.key;
+                  return (
+                    <button
+                      key={t.key}
+                      onClick={() => { setDashTab(t.key); if (t.key === "leads") setUnreadLeads(0); }}
+                      style={{
+                        background: active ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
+                        color: active ? '#fef08a' : '#94a3b8',
+                        border: active ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid transparent',
+                        borderRadius: 8,
+                        padding: '12px 16px',
+                        fontSize: 14,
+                        fontWeight: active ? 700 : 500,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        textAlign: 'left'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <Icon name={t.icon} size={18} color={active ? '#d4af37' : '#94a3b8'} />
+                        <span>{t.label}</span>
+                      </div>
+                      {!!t.badge && (
+                        <span style={{ background: '#ef4444', color: '#fff', fontSize: 11, padding: '2px 6px', borderRadius: 10, fontWeight: 700 }}>
+                          {t.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Agent Profile Footer */}
+              <div style={{ borderTop: '1px solid #1e293b', paddingTop: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#d4af37', color: '#0f172a', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {AGENT.initials}
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc' }}>{AGENT.name}</div>
+                  <div style={{ fontSize: 12, color: '#94a3b8' }}>{AGENT.role}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Dashboard Content */}
+            <div style={{ flex: 1, padding: 36, overflowY: 'auto' }}>
+              
+              {dashToast && (
+                <div style={{ background: '#10b981', color: '#fff', padding: '12px 20px', borderRadius: 8, marginBottom: 24, fontWeight: 600 }}>
+                  {dashToast}
+                </div>
+              )}
+
+              {/* Overview Tab */}
+              {dashTab === "overview" && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+                    <div>
+                      <h2 style={{ fontSize: 26, fontWeight: 700, color: '#f8fafc' }}>Dashboard Overview</h2>
+                      <p style={{ fontSize: 14, color: '#94a3b8' }}>Real-time sync with buyer interactions across Web &amp; Mobile</p>
+                    </div>
+                    <button 
+                      onClick={() => setShowAddListing(true)}
+                      style={{
+                        background: 'linear-gradient(135deg, #d4af37 0%, #a9803f 100%)', color: '#0f172a',
+                        border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 700, fontSize: 14,
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8
+                      }}
+                    >
+                      <Icon name="plus" size={16} /> Add New Listing
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 32 }}>
+                    <KpiCard label="Active Listings" value={listings.filter((l) => l.status === "Active").length} iconName="home" />
+                    <KpiCard label="Total Leads" value={leads.length} iconName="users" accent />
+                    <KpiCard label="Scheduled Viewings" value={leads.filter((l) => l.status !== "Cancelled").length} iconName="calendar" />
+                    <KpiCard label="Avg Response Time" value="18 min" iconName="clock" mono />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
+                    <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 14, padding: 24 }}>
+                      <h3 style={{ fontSize: 16, fontWeight: 700, color: '#f8fafc', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Icon name="trending-up" size={18} color="#d4af37" /> Weekly Listing Traffic
+                      </h3>
+                      <MiniBarChart data={WEEK_VIEWS} />
+                    </div>
+
+                    <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 14, padding: 24 }}>
+                      <h3 style={{ fontSize: 16, fontWeight: 700, color: '#f8fafc', marginBottom: 16 }}>Live Activity Feed</h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        {activity.map((a) => (
+                          <div key={a.id} style={{ display: 'flex', gap: 10, fontSize: 13, borderBottom: '1px solid #1e293b', paddingBottom: 10 }}>
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#d4af37', marginTop: 5 }} />
+                            <div style={{ flex: 1, color: '#cbd5e1' }}>{a.text}</div>
+                            <div style={{ fontSize: 11, color: '#64748b' }}>{a.time}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Listings Tab */}
+              {dashTab === "listings" && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                    <h2 style={{ fontSize: 24, fontWeight: 700, color: '#f8fafc' }}>Manage Listings ({listings.length})</h2>
+                    <button 
+                      onClick={() => setShowAddListing(true)}
+                      style={{
+                        background: '#d4af37', color: '#0f172a', border: 'none', padding: '10px 18px',
+                        borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer'
+                      }}
+                    >
+                      + Create Listing
+                    </button>
+                  </div>
+
+                  <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12, overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 14, color: '#cbd5e1' }}>
+                      <thead style={{ background: '#1e293b', color: '#94a3b8', fontSize: 12, textTransform: 'uppercase' }}>
+                        <tr>
+                          <th style={{ padding: '14px 20px' }}>Property Title</th>
+                          <th style={{ padding: '14px 20px' }}>Type</th>
+                          <th style={{ padding: '14px 20px' }}>Location</th>
+                          <th style={{ padding: '14px 20px' }}>Price</th>
+                          <th style={{ padding: '14px 20px' }}>Status</th>
+                          <th style={{ padding: '14px 20px' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {listings.map((l) => (
+                          <tr key={l.id} style={{ borderBottom: '1px solid #1e293b' }}>
+                            <td style={{ padding: '16px 20px', fontWeight: 600, color: '#f8fafc' }}>{l.title}</td>
+                            <td style={{ padding: '16px 20px' }}>{l.type}</td>
+                            <td style={{ padding: '16px 20px' }}>{l.location}</td>
+                            <td style={{ padding: '16px 20px', color: '#fef08a', fontWeight: 700 }}>{EUR(l.price)}</td>
+                            <td style={{ padding: '16px 20px' }}>
+                              <span style={{
+                                background: l.status === 'Active' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                                color: l.status === 'Active' ? '#34d399' : '#fbbf24',
+                                padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600
+                              }}>
+                                {l.status}
+                              </span>
+                            </td>
+                            <td style={{ padding: '16px 20px' }}>
+                              <button onClick={() => openListing(l.id)} style={{ background: 'transparent', border: '1px solid #334155', color: '#cbd5e1', padding: '4px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Leads Tab */}
+              {dashTab === "leads" && (
+                <div>
+                  <h2 style={{ fontSize: 24, fontWeight: 700, color: '#f8fafc', marginBottom: 20 }}>Viewing Requests &amp; Leads</h2>
+                  <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12, overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 14, color: '#cbd5e1' }}>
+                      <thead style={{ background: '#1e293b', color: '#94a3b8', fontSize: 12, textTransform: 'uppercase' }}>
+                        <tr>
+                          <th style={{ padding: '14px 20px' }}>Client Name</th>
+                          <th style={{ padding: '14px 20px' }}>Requested Property</th>
+                          <th style={{ padding: '14px 20px' }}>Scheduled Date/Time</th>
+                          <th style={{ padding: '14px 20px' }}>Source</th>
+                          <th style={{ padding: '14px 20px' }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leads.map((ld) => (
+                          <tr key={ld.id} style={{ borderBottom: '1px solid #1e293b' }}>
+                            <td style={{ padding: '16px 20px', fontWeight: 600, color: '#f8fafc' }}>{ld.name}</td>
+                            <td style={{ padding: '16px 20px' }}>{ld.listing}</td>
+                            <td style={{ padding: '16px 20px', color: '#fef08a' }}>{ld.when}</td>
+                            <td style={{ padding: '16px 20px' }}>{ld.source}</td>
+                            <td style={{ padding: '16px 20px' }}>
+                              <span style={{
+                                background: ld.status === 'Confirmed' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                color: ld.status === 'Confirmed' ? '#34d399' : '#f87171',
+                                padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600
+                              }}>
+                                {ld.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Calendar Tab */}
+              {dashTab === "calendar" && (
+                <div>
+                  <h2 style={{ fontSize: 24, fontWeight: 700, color: '#f8fafc', marginBottom: 20 }}>Viewing Schedule</h2>
+                  <div style={{ display: 'grid', gap: 16 }}>
+                    {leads.map((ld) => (
+                      <div key={ld.id} style={{ background: '#0f172a', border: '1px solid #1e293b', padding: 20, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                          <div style={{ background: '#1e293b', color: '#d4af37', padding: '12px 18px', borderRadius: 8, fontWeight: 700, textAlign: 'center' }}>
+                            {ld.when}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: '#f8fafc' }}>{ld.listing}</div>
+                            <div style={{ fontSize: 13, color: '#94a3b8' }}>Client: {ld.name} ({ld.source})</div>
+                          </div>
+                        </div>
+                        <span style={{ background: 'rgba(212, 175, 55, 0.2)', color: '#d4af37', padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600 }}>
+                          {ld.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------------ */}
+        {/* VIEW 3: MOBILE APP PREVIEW                                          */}
+        {/* ------------------------------------------------------------------ */}
+        {view === "mobile" && (
+          <div style={{ flex: 1, padding: '40px 20px', display: 'flex', justifyContent: 'center', background: '#080d1a' }}>
+            <div style={{
+              width: 380, height: 740, background: '#0f172a', borderRadius: 44,
+              border: '12px solid #1e293b', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+              display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden'
+            }}>
+              {/* Phone Status Bar */}
+              <div style={{ height: 40, background: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 24px', fontSize: 12, fontWeight: 600, color: '#cbd5e1' }}>
+                <span>{timeNow()}</span>
+                <div style={{ width: 80, height: 18, background: '#1e293b', borderRadius: 10 }} />
+                <div style={{ display: 'flex', gap: 4 }}><Icon name="wifi" size={12} /><Icon name="battery" size={14} /></div>
+              </div>
+
+              {/* Phone Content Screen */}
+              <div style={{ flex: 1, padding: 16, overflowY: 'auto' }}>
+                {toastPhone && (
+                  <div style={{ background: '#d4af37', color: '#0f172a', padding: 10, borderRadius: 8, fontSize: 11, fontWeight: 700, marginBottom: 12 }}>
+                    {toastPhone}
+                  </div>
+                )}
+
+                {phoneTab === "home" && !selectedListing && (
+                  <div>
+                    <div style={{ fontSize: 12, color: '#94a3b8' }}>Good morning, {DEMO_USER.split(" ")[0]}</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 14 }}>Find your home</div>
+
+                    {/* Mobile Search */}
+                    <div style={{ background: '#1e293b', padding: '8px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                      <Icon name="search" size={14} color="#94a3b8" />
+                      <input 
+                        placeholder="Search Dublin..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: 12, outline: 'none', width: '100%' }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto' }}>
+                      {["All", "House", "Apartment", "Duplex"].map((f) => (
+                        <button key={f} onClick={() => setFilter(f)} style={{
+                          background: filter === f ? '#d4af37' : '#1e293b',
+                          color: filter === f ? '#0f172a' : '#cbd5e1', border: 'none',
+                          padding: '6px 12px', borderRadius: 14, fontSize: 11, fontWeight: 600, cursor: 'pointer'
+                        }}>{f}</button>
+                      ))}
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      {filteredListings.map((l) => (
+                        <div key={l.id} onClick={() => openListing(l.id)} style={{ background: '#1e293b', borderRadius: 12, overflow: 'hidden', cursor: 'pointer' }}>
+                          <img src={l.image} style={{ width: '100%', height: 130, objectFit: 'cover' }} />
+                          <div style={{ padding: 12 }}>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: '#fef08a' }}>{EUR(l.price)}</div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{l.title}</div>
+                            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>{l.location}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selectedListing && (
+                  <div>
+                    <button onClick={() => setSelectedId(null)} style={{ background: 'transparent', border: 'none', color: '#d4af37', cursor: 'pointer', fontSize: 12, marginBottom: 10 }}>
+                      &larr; Back
+                    </button>
+                    <img src={selectedListing.image} style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 12, marginBottom: 12 }} />
+                    <div style={{ fontSize: 18, fontWeight: 800, color: '#fef08a' }}>{EUR(selectedListing.price)}</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 6 }}>{selectedListing.title}</div>
+                    <p style={{ fontSize: 12, color: '#cbd5e1', lineHeight: 1.5, marginBottom: 16 }}>{selectedListing.description}</p>
+                    <button 
+                      onClick={() => setShowSchedule(true)}
+                      style={{ width: '100%', background: '#d4af37', color: '#0f172a', border: 'none', padding: 12, borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+                    >
+                      Schedule Viewing
+                    </button>
+                  </div>
+                )}
+
+                {phoneTab === "saved" && !selectedListing && (
+                  <div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 14 }}>Saved Properties ({savedIds.length})</div>
+                    {listings.filter((l) => savedIds.includes(l.id)).map((l) => (
+                      <div key={l.id} onClick={() => openListing(l.id)} style={{ background: '#1e293b', padding: 10, borderRadius: 8, marginBottom: 10, cursor: 'pointer' }}>
+                        <div style={{ fontWeight: 700, color: '#fff', fontSize: 13 }}>{l.title}</div>
+                        <div style={{ color: '#fef08a', fontSize: 12 }}>{EUR(l.price)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {phoneTab === "messages" && !selectedListing && (
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 12 }}>Agent Chat</div>
+                    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {messages.map((m, i) => (
+                        <div key={i} style={{
+                          alignSelf: m.from === 'me' ? 'flex-end' : 'flex-start',
+                          background: m.from === 'me' ? '#d4af37' : '#1e293b',
+                          color: m.from === 'me' ? '#0f172a' : '#fff',
+                          padding: '8px 12px', borderRadius: 10, fontSize: 12, maxWidth: '80%'
+                        }}>
+                          {m.text}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                      <input 
+                        value={draft} onChange={(e) => setDraft(e.target.value)} 
+                        placeholder="Type message..." 
+                        style={{ flex: 1, background: '#1e293b', border: 'none', color: '#fff', padding: 8, borderRadius: 6, fontSize: 12 }}
+                      />
+                      <button onClick={sendMessage} style={{ background: '#d4af37', border: 'none', color: '#0f172a', padding: '8px 12px', borderRadius: 6, fontWeight: 700 }}>Send</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Phone Bottom Tab Bar */}
+              <div style={{ height: 60, background: '#0f172a', borderTop: '1px solid #1e293b', display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+                {[
+                  { key: "home", icon: "home", label: "Home" },
+                  { key: "saved", icon: "heart", label: "Saved" },
+                  { key: "messages", icon: "message-circle", label: "Chat" },
+                ].map((t) => (
+                  <button key={t.key} onClick={() => { setSelectedId(null); setPhoneTab(t.key); }} style={{ background: 'transparent', border: 'none', color: phoneTab === t.key && !selectedListing ? '#d4af37' : '#64748b', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', fontSize: 10 }}>
+                    <Icon name={t.icon} size={18} />
+                    <span>{t.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+      </main>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* MODAL: SCHEDULE VIEWING                                             */}
+      {/* ------------------------------------------------------------------ */}
+      {showSchedule && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 16, padding: 28, maxWidth: 440, width: '100%', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ fontSize: 18, color: '#f8fafc' }}>Schedule Private Viewing</h3>
+              <button onClick={() => setShowSchedule(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><Icon name="x" size={20} /></button>
+            </div>
+            <p style={{ fontSize: 13, color: '#d4af37', marginBottom: 20 }}>{selectedListing?.title}</p>
+            
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, color: '#94a3b8', display: 'block', marginBottom: 8 }}>Select Date</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {DATE_CHIPS.map((d) => (
+                  <button key={d} onClick={() => setConfirmDate(d)} style={{
+                    flex: 1, padding: 8, borderRadius: 6, fontSize: 12, border: '1px solid #334155', cursor: 'pointer',
+                    background: confirmDate === d ? '#d4af37' : '#1e293b', color: confirmDate === d ? '#0f172a' : '#fff'
+                  }}>{d}</button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ fontSize: 12, color: '#94a3b8', display: 'block', marginBottom: 8 }}>Select Time Slot</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {TIME_CHIPS.map((t) => (
+                  <button key={t} onClick={() => setConfirmTime(t)} style={{
+                    flex: 1, padding: 8, borderRadius: 6, fontSize: 12, border: '1px solid #334155', cursor: 'pointer',
+                    background: confirmTime === t ? '#d4af37' : '#1e293b', color: confirmTime === t ? '#0f172a' : '#fff'
+                  }}>{t}</button>
+                ))}
+              </div>
+            </div>
+
+            <button onClick={confirmSchedule} style={{ width: '100%', background: 'linear-gradient(135deg, #d4af37 0%, #a9803f 100%)', color: '#0f172a', border: 'none', padding: 12, borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              Confirm Viewing Request
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------------ */}
+      {/* MODAL: ADD LISTING (AGENT PORTAL)                                  */}
+      {/* ------------------------------------------------------------------ */}
+      {showAddListing && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <form onSubmit={handleCreateListing} style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 16, padding: 28, maxWidth: 500, width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ fontSize: 18, color: '#f8fafc' }}>Add New Property Listing</h3>
+              <button type="button" onClick={() => setShowAddListing(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><Icon name="x" size={20} /></button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
+              <input required placeholder="Property Title (e.g. Modern Penthouse)" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} style={{ background: '#1e293b', border: '1px solid #334155', color: '#fff', padding: 10, borderRadius: 6, fontSize: 13 }} />
+              <div style={{ display: 'flex', gap: 10 }}>
+                <input required type="number" placeholder="Price (€)" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} style={{ flex: 1, background: '#1e293b', border: '1px solid #334155', color: '#fff', padding: 10, borderRadius: 6, fontSize: 13 }} />
+                <select value={newType} onChange={(e) => setNewType(e.target.value)} style={{ flex: 1, background: '#1e293b', border: '1px solid #334155', color: '#fff', padding: 10, borderRadius: 6, fontSize: 13 }}>
+                  <option value="House">House</option>
+                  <option value="Apartment">Apartment</option>
+                  <option value="Duplex">Duplex</option>
+                </select>
+              </div>
+              <input placeholder="Location (e.g. Ballsbridge, Dublin 4)" value={newLocation} onChange={(e) => setNewLocation(e.target.value)} style={{ background: '#1e293b', border: '1px solid #334155', color: '#fff', padding: 10, borderRadius: 6, fontSize: 13 }} />
+              <textarea placeholder="Description" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} rows={3} style={{ background: '#1e293b', border: '1px solid #334155', color: '#fff', padding: 10, borderRadius: 6, fontSize: 13 }} />
+            </div>
+
+            <button type="submit" style={{ width: '100%', background: '#d4af37', color: '#0f172a', border: 'none', padding: 12, borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              Publish Listing
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <footer style={{ background: '#080d1a', borderTop: '1px solid #1e293b', padding: '24px 40px', textAlign: 'center', fontSize: 13, color: '#64748b' }}>
+        Harlow &amp; Finch Real Estate Platform — Designed for Seamless Client &amp; Agent Interaction
+      </footer>
+
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<RealEstateAppDemo />);
+</script>
+</body>
+</html>
